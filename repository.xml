@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<repositories version="1.0">
+  <repo priority="50" quality="experimental" status="unofficial">
+    <name>ikegami__</name>
+    <description lang="en">
+      Ebuilds for OSX ElCapitan
+    </description>
+    <homepage>
+      https://github.com/IKEGAMIDaisuke/ElCapitan-overlay
+    </homepage>
+    <owner type="person">
+      <email>ikegami.da+overlay@gmail.com</email>
+      <name>IKEGAMI Daisuke</name>
+    </owner>
+    <source type="git">
+      https://github.com/IKEGAMIDaisuke/ElCapitan-overlay.git
+    </source>
+    <feed>
+      https://github.com/IKEGAMIDaisuke/ElCapitan-overlay/commits/master.atom
+    </feed>
+  </repo>
+</repositories>
