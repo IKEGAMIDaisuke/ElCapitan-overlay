@@ -1,4 +1,4 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2012 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Id$
 
@@ -12,7 +12,7 @@ SRC_URI="http://www.adel.nursat.kz/apg/download/${P}.tar.gz"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~alpha amd64 hppa ppc ~ppc64 x86 ~amd64-linux ~x86-linux ~ppc-macos"
+KEYWORDS="~x64-macos"
 IUSE="cracklib"
 
 DEPEND="cracklib? ( sys-libs/cracklib )"
@@ -21,13 +21,15 @@ RDEPEND="${DEPEND}"
 src_prepare() {
 	chmod -R 0700 "${S}"
 	if use cracklib; then
-		epatch "${FILESDIR}"/${P}-cracklib.patch
+		# sed literally later in src_prepare()
+		# instead of
+		#   epatch "${FILESDIR}"/${P}-cracklib.patch
+		# because it causes a runtime error.
+		# See the commit log 8c413e8 in detail.
 		epatch "${FILESDIR}"/${PN}-glibc-2.4.patch
 	fi
 	epatch "${FILESDIR}"/${P}-crypt_password.patch
-}
 
-src_compile() {
 	sed -i 's,^#\(APG_CS_CLIBS += -lnsl\)$,\1,' Makefile \
 		|| die "Sed failed"
 	if [[ ${CHOST} == *-darwin* ]]; then
@@ -35,6 +37,32 @@ src_compile() {
 		|| die "Sed failed"
 	fi
 
+	# comment out some lines in Makefile
+	sed -i \
+		'{
+			s/^#CRACKLIB_DICTPATH/CRACKLIB_DICTPATH/
+			s/^#STANDALONE_OPTIONS/STANDALONE_OPTIONS/
+			s/^#CLISERV_OPTIONS/CLISERV_OPTIONS/
+			s/^#APG_CLIBS/APG_CLIBS/
+		}
+		' \
+		${WORKDIR}/${P}/Makefile || die "Sed failed"
+
+	# refer the path of Gentoo Prefix in Makefile not /usr/local
+	previous_cracklib_dictpath='/usr/local/lib/pw_dict'
+	following_cracklib_dictpath="${EPREFIX}"'/usr/lib/pw_dict'
+	sed -i \
+		"s,$previous_cracklib_dictpath,$following_cracklib_dictpath," \
+		${WORKDIR}/${P}/Makefile || die "Sed failed"
+
+	# tune the clacklib_dictpath flag in Makefile
+	cracklib_dictpath_option='-DCRACKLIB_DICTPATH=${CRACKLIB_DICTPATH}'
+	sed -i \
+		"s,$cracklib_dictpath_option'.*,$cracklib_dictpath_option'," \
+		${WORKDIR}/${P}/Makefile || die "Sed failed"
+}
+
+src_compile() {
 	emake \
 		FLAGS="${CFLAGS} ${LDFLAGS}" CFLAGS="${CFLAGS} ${LDFLAGS}" \
 		CC="$(tc-getCC)" \
